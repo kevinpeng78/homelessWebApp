@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Homelessness Risk Prediction in OC</title>
+    <style>
+        body {
+            background-color: #2B2B2B;
+            color: #FFFFFF;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        #container {
+            display: flex;
+            flex-direction: row;
+            height: 100vh;
+        }
+        #map-container {
+            flex: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #data-container {
+            flex: 1;
+            padding: 20px;
+            background-color: #3C3F41;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        select, option {
+            background-color: #3C3F41;
+            color: #FFFFFF;
+            padding: 10px;
+            border: 1px solid #FFFFFF;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .data-label {
+            font-size: 20px;
+            margin-top: 40px;
+        }
+        h1 {
+            text-align: center;
+            padding: 20px;
+            background-color: #212121;
+            margin: 0;
+        }
+        #map-container img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+        }
+        label {
+            font-size: 24px;
+        }
+        .separator {
+            margin: 20px 0;
+            border-bottom: 1px solid #FFFFFF;
+        }
+        /* Add this new CSS class */
+        .homelessness-index {
+            font-size: 28px; /* Adjust the size as needed */
+            font-weight: bold; /* Optional: makes the text bold */
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Homelessness Risk Prediction in OC</h1>
+    <div id="container">
+        <div id="map-container">
+            <img src="{{ url_for('static', filename='map.png') }}" alt="Map" id="map-image">
+        </div>
+        <div id="data-container">
+            <label for="town-select">Select a Town</label><br>
+            <select id="town-select">
+                <option value="">Select a town</option>
+                {% for town in towns %}
+                <option value="{{ town }}">{{ town }}</option>
+                {% endfor %}
+            </select>
+            <div class="data-label" id="data-label"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('town-select').addEventListener('change', function() {
+            var town = this.value;
+            if (town) {
+                fetch('/get_town_data?town=' + encodeURIComponent(town))
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('data-label').innerHTML = data.error;
+                    } else {
+                        var displayText = '';
+                        for (var key in data) {
+                            if (key !== 'Homelessness Index') {
+                                displayText += key + ': ' + data[key] + '<br><br>';
+                            }
+                        }
+                        displayText += '<div class="separator"></div>';
+                        displayText += '<div class="homelessness-index">Homelessness Index: ' + data['Homelessness Index'] + '</div>';
+                        displayText += '<div class="separator"></div>';
+                        document.getElementById('data-label').innerHTML = displayText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('data-label').innerHTML = 'Error fetching data';
+                });
+            } else {
+                document.getElementById('data-label').innerHTML = '';
+            }
+        });
+    </script>
+</body>
+</html>
